@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAD问题快速诊断系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .alert {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+        }
+
+        .result-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .result-box p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+
+        .copy-btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PAD问题快速诊断系统</h1>
+        <p class="subtitle">快速定位并收集用户PAD问题</p>
+
+        <form id="feedbackForm">
+            <!-- UID输入 -->
+            <div class="form-group">
+                <label for="uid">用户UID <span class="required">*</span></label>
+                <input type="text" id="uid" name="uid" placeholder="请输入用户UID" required>
+            </div>
+
+            <!-- 问题类型选择 -->
+            <div class="form-group">
+                <label>问题类型 <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="problemType" value="hardware" required>
+                        <span>硬件问题</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="problemType" value="software" required>
+                        <span>软件问题</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 硬件问题选项 -->
+            <div id="hardwareSection" class="hidden">
+                <div class="alert" id="hardwareAlert">
+                    ⚠️ 请走班主任系统硬件售后
+                </div>
+
+                <div class="form-group">
+                    <label for="hardwareProblem">硬件问题类型 <span class="required">*</span></label>
+                    <select id="hardwareProblem" name="hardwareProblem">
+                        <option value="">请选择问题类型</option>
+                        <option value="维修">维修</option>
+                        <option value="申请备用机">申请备用机</option>
+                        <option value="换新">换新</option>
+                        <option value="电量不足">电量不足</option>
+                        <option value="点阵笔无法安装">点阵笔无法安装</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+
+                <div class="form-group hidden" id="hardwareOtherSection">
+                    <label for="hardwareOther">请描述具体问题 <span class="required">*</span></label>
+                    <textarea id="hardwareOther" name="hardwareOther" placeholder="请详细描述您遇到的问题..."></textarea>
+                </div>
+            </div>
+
+            <!-- 软件问题选项 -->
+            <div id="softwareSection" class="hidden">
+                <div class="form-group">
+                    <label for="softwareProblem">软件问题类型 <span class="required">*</span></label>
+                    <select id="softwareProblem" name="softwareProblem">
+                        <option value="">请选择问题类型</option>
+                        <option value="学习计划无法排">学习计划无法排</option>
+                        <option value="更新激活码">更新激活码</option>
+                        <option value="查看学习统计">查看学习统计（每日21:00查看）</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+
+                <div class="form-group hidden" id="softwareOtherSection">
+                    <label for="softwareOther">请描述具体问题 <span class="required">*</span></label>
+                    <textarea id="softwareOther" name="softwareOther" placeholder="请详细描述您遇到的问题..."></textarea>
+                </div>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div class="btn-group">
+                <button type="button" class="btn-secondary" onclick="resetForm()">重置</button>
+                <button type="submit" class="btn-primary">提交诊断</button>
+            </div>
+        </form>
+
+        <!-- 问题解决状态 -->
+        <div id="resolutionSection" class="hidden" style="margin-top: 30px;">
+            <div class="form-group">
+                <label>问题是否已解决？ <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="resolved" value="yes">
+                        <span>已解决 ✓</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="resolved" value="no">
+                        <span>未解决，转人工处理</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果显示 -->
+        <div id="resultBox" class="result-box">
+            <h3>诊断结果</h3>
+            <p id="resultText"></p>
+            <button class="copy-btn" onclick="copyResult()">复制结果</button>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('feedbackForm');
+        const hardwareSection = document.getElementById('hardwareSection');
+        const softwareSection = document.getElementById('softwareSection');
+        const hardwareAlert = document.getElementById('hardwareAlert');
+        const hardwareOtherSection = document.getElementById('hardwareOtherSection');
+        const softwareOtherSection = document.getElementById('softwareOtherSection');
+        const resolutionSection = document.getElementById('resolutionSection');
+        const resultBox = document.getElementById('resultBox');
+        const resultText = document.getElementById('resultText');
+
+        let currentDiagnosis = null;
+
+        // 监听问题类型选择
+        document.querySelectorAll('input[name="problemType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                hardwareSection.classList.add('hidden');
+                softwareSection.classList.add('hidden');
+                resolutionSection.classList.add('hidden');
+                resultBox.classList.remove('show');
+
+                if (this.value === 'hardware') {
+                    hardwareSection.classList.remove('hidden');
+                    hardwareAlert.classList.add('show');
+                } else if (this.value === 'software') {
+                    softwareSection.classList.remove('hidden');
+                }
+            });
+        });
+
+        // 监听硬件问题选择
+        document.getElementById('hardwareProblem').addEventListener('change', function() {
+            if (this.value === '其他') {
+                hardwareOtherSection.classList.remove('hidden');
+            } else {
+                hardwareOtherSection.classList.add('hidden');
+            }
+        });
+
+        // 监听软件问题选择
+        document.getElementById('softwareProblem').addEventListener('change', function() {
+            if (this.value === '其他') {
+                softwareOtherSection.classList.remove('hidden');
+            } else {
+                softwareOtherSection.classList.add('hidden');
+            }
+        });
+
+        // 表单提交
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const uid = document.getElementById('uid').value;
+            const problemType = document.querySelector('input[name="problemType"]:checked').value;
+            let problemDetail = '';
+
+            if (problemType === 'hardware') {
+                const hardwareProblem = document.getElementById('hardwareProblem').value;
+                if (!hardwareProblem) {
+                    alert('请选择硬件问题类型');
+                    return;
+                }
+
+                if (hardwareProblem === '其他') {
+                    const otherDetail = document.getElementById('hardwareOther').value;
+                    if (!otherDetail.trim()) {
+                        alert('请描述具体的硬件问题');
+                        return;
+                    }
+                    problemDetail = otherDetail;
+                } else {
+                    problemDetail = hardwareProblem;
+                }
+            } else {
+                const softwareProblem = document.getElementById('softwareProblem').value;
+                if (!softwareProblem) {
+                    alert('请选择软件问题类型');
+                    return;
+                }
+
+                if (softwareProblem === '其他') {
+                    const otherDetail = document.getElementById('softwareOther').value;
+                    if (!otherDetail.trim()) {
+                        alert('请描述具体的软件问题');
+                        return;
+                    }
+                    problemDetail = otherDetail;
+                } else {
+                    problemDetail = softwareProblem;
+                }
+            }
+
+            // 保存当前诊断信息
+            currentDiagnosis = {
+                uid: uid,
+                problemType: problemType === 'hardware' ? '硬件' : '软件',
+                problemDetail: problemDetail
+            };
+
+            // 显示解决状态选择
+            resolutionSection.classList.remove('hidden');
+
+            // 滚动到解决状态部分
+            resolutionSection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // 监听解决状态选择
+        document.querySelectorAll('input[name="resolved"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (!currentDiagnosis) return;
+
+                let result = '';
+
+                if (this.value === 'yes') {
+                    result = `UID: ${currentDiagnosis.uid}\n问题类型: ${currentDiagnosis.problemType}\n问题详情: ${currentDiagnosis.problemDetail}\n\n状态: ✓ 问题已解决`;
+
+                    // 保存已解决的记录
+                    saveRecord({
+                        ...currentDiagnosis,
+                        status: '已解决',
+                        timestamp: new Date().toLocaleString('zh-CN')
+                    });
+                } else {
+                    result = `转人工处理：\nUID ${currentDiagnosis.uid} 存在「${currentDiagnosis.problemType}」${currentDiagnosis.problemDetail}问题`;
+
+                    // 保存未解决的记录
+                    saveRecord({
+                        ...currentDiagnosis,
+                        status: '未解决-转人工',
+                        timestamp: new Date().toLocaleString('zh-CN')
+                    });
+                }
+
+                resultText.textContent = result;
+                resultBox.classList.add('show');
+
+                // 滚动到结果部分
+                resultBox.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // 保存记录到本地存储
+        function saveRecord(record) {
+            let records = JSON.parse(localStorage.getItem('feedbackRecords') || '[]');
+            records.push(record);
+            localStorage.setItem('feedbackRecords', JSON.stringify(records));
+        }
+
+        // 复制结果
+        function copyResult() {
+            const text = resultText.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '已复制 ✓';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // 重置表单
+        function resetForm() {
+            form.reset();
+            hardwareSection.classList.add('hidden');
+            softwareSection.classList.add('hidden');
+            hardwareOtherSection.classList.add('hidden');
+            softwareOtherSection.classList.add('hidden');
+            resolutionSection.classList.add('hidden');
+            resultBox.classList.remove('show');
+            hardwareAlert.classList.remove('show');
+            currentDiagnosis = null;
+        }
+
+        // 导出记录功能（可选）
+        function exportRecords() {
+            const records = JSON.parse(localStorage.getItem('feedbackRecords') || '[]');
+            const dataStr = JSON.stringify(records, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `feedback_records_${new Date().getTime()}.json`;
+            link.click();
+        }
+    </script>
+</body>
+</html>

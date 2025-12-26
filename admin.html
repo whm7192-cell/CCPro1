@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反馈记录管理 - PAD问题诊断系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            color: #333;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-card.total .number {
+            color: #667eea;
+        }
+
+        .stat-card.resolved .number {
+            color: #27ae60;
+        }
+
+        .stat-card.unresolved .number {
+            color: #e74c3c;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        select, input[type="text"], input[type="date"] {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+            text-align: left;
+            padding: 15px;
+            font-size: 14px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-hardware {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-software {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .badge-resolved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-unresolved {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .table-container {
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 800px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 反馈记录管理</h1>
+        <div class="btn-group">
+            <button class="btn-secondary" onclick="window.location.href='index.html'">返回诊断页面</button>
+            <button class="btn-primary" onclick="exportRecords()">导出记录</button>
+            <button class="btn-danger" onclick="clearAllRecords()">清空所有记录</button>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card total">
+            <h3>总记录数</h3>
+            <div class="number" id="totalCount">0</div>
+        </div>
+        <div class="stat-card resolved">
+            <h3>已解决</h3>
+            <div class="number" id="resolvedCount">0</div>
+        </div>
+        <div class="stat-card unresolved">
+            <h3>未解决</h3>
+            <div class="number" id="unresolvedCount">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>硬件问题</h3>
+            <div class="number" id="hardwareCount">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>软件问题</h3>
+            <div class="number" id="softwareCount">0</div>
+        </div>
+    </div>
+
+    <div class="filters">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>问题类型</label>
+                <select id="filterType" onchange="applyFilters()">
+                    <option value="all">全部</option>
+                    <option value="硬件">硬件</option>
+                    <option value="软件">软件</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>解决状态</label>
+                <select id="filterStatus" onchange="applyFilters()">
+                    <option value="all">全部</option>
+                    <option value="已解决">已解决</option>
+                    <option value="未解决-转人工">未解决</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>UID搜索</label>
+                <input type="text" id="filterUID" placeholder="搜索UID" oninput="applyFilters()">
+            </div>
+            <div class="filter-group">
+                <label>刷新数据</label>
+                <button class="btn-primary" onclick="loadRecords()">🔄 刷新</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th>UID</th>
+                    <th>问题类型</th>
+                    <th>问题详情</th>
+                    <th>状态</th>
+                    <th>时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="recordsTable">
+                <!-- 记录将动态插入 -->
+            </tbody>
+        </table>
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3>暂无记录</h3>
+            <p>还没有任何反馈记录</p>
+        </div>
+    </div>
+
+    <script>
+        let allRecords = [];
+        let filteredRecords = [];
+
+        // 加载记录
+        function loadRecords() {
+            allRecords = JSON.parse(localStorage.getItem('feedbackRecords') || '[]');
+            // 按时间倒序排列（最新的在前）
+            allRecords.reverse();
+            updateStats();
+            applyFilters();
+        }
+
+        // 更新统计数据
+        function updateStats() {
+            const total = allRecords.length;
+            const resolved = allRecords.filter(r => r.status === '已解决').length;
+            const unresolved = allRecords.filter(r => r.status === '未解决-转人工').length;
+            const hardware = allRecords.filter(r => r.problemType === '硬件').length;
+            const software = allRecords.filter(r => r.problemType === '软件').length;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('resolvedCount').textContent = resolved;
+            document.getElementById('unresolvedCount').textContent = unresolved;
+            document.getElementById('hardwareCount').textContent = hardware;
+            document.getElementById('softwareCount').textContent = software;
+        }
+
+        // 应用筛选
+        function applyFilters() {
+            const typeFilter = document.getElementById('filterType').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+            const uidFilter = document.getElementById('filterUID').value.toLowerCase();
+
+            filteredRecords = allRecords.filter(record => {
+                const typeMatch = typeFilter === 'all' || record.problemType === typeFilter;
+                const statusMatch = statusFilter === 'all' || record.status === statusFilter;
+                const uidMatch = !uidFilter || record.uid.toLowerCase().includes(uidFilter);
+                return typeMatch && statusMatch && uidMatch;
+            });
+
+            renderTable();
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('recordsTable');
+            const emptyState = document.getElementById('emptyState');
+
+            if (filteredRecords.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            tbody.innerHTML = filteredRecords.map((record, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><strong>${record.uid}</strong></td>
+                    <td><span class="badge badge-${record.problemType === '硬件' ? 'hardware' : 'software'}">${record.problemType}</span></td>
+                    <td>${record.problemDetail}</td>
+                    <td><span class="badge badge-${record.status === '已解决' ? 'resolved' : 'unresolved'}">${record.status}</span></td>
+                    <td>${record.timestamp}</td>
+                    <td>
+                        <button class="btn-secondary action-btn" onclick="viewDetail(${allRecords.indexOf(record)})">详情</button>
+                        <button class="btn-danger action-btn" onclick="deleteRecord(${allRecords.indexOf(record)})">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 查看详情
+        function viewDetail(index) {
+            const record = allRecords[index];
+            alert(`
+详细信息：
+━━━━━━━━━━━━━━━━━━
+UID: ${record.uid}
+问题类型: ${record.problemType}
+问题详情: ${record.problemDetail}
+状态: ${record.status}
+时间: ${record.timestamp}
+            `.trim());
+        }
+
+        // 删除记录
+        function deleteRecord(index) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+
+            allRecords.splice(index, 1);
+            allRecords.reverse();
+            localStorage.setItem('feedbackRecords', JSON.stringify(allRecords));
+            allRecords.reverse();
+            updateStats();
+            applyFilters();
+        }
+
+        // 导出记录
+        function exportRecords() {
+            if (allRecords.length === 0) {
+                alert('没有可导出的记录');
+                return;
+            }
+
+            // JSON格式导出
+            const dataStr = JSON.stringify(allRecords, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `feedback_records_${new Date().getTime()}.json`;
+            link.click();
+
+            // CSV格式导出
+            setTimeout(() => {
+                const csv = [
+                    ['UID', '问题类型', '问题详情', '状态', '时间'],
+                    ...allRecords.map(r => [r.uid, r.problemType, r.problemDetail, r.status, r.timestamp])
+                ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+                const csvBlob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+                const csvUrl = URL.createObjectURL(csvBlob);
+                const csvLink = document.createElement('a');
+                csvLink.href = csvUrl;
+                csvLink.download = `feedback_records_${new Date().getTime()}.csv`;
+                csvLink.click();
+            }, 500);
+
+            alert('记录已导出为 JSON 和 CSV 格式');
+        }
+
+        // 清空所有记录
+        function clearAllRecords() {
+            if (!confirm('确定要清空所有记录吗？此操作不可恢复！')) return;
+            if (!confirm('再次确认：真的要删除所有记录吗？')) return;
+
+            localStorage.removeItem('feedbackRecords');
+            allRecords = [];
+            updateStats();
+            applyFilters();
+            alert('所有记录已清空');
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            loadRecords();
+        };
+    </script>
+</body>
+</html>

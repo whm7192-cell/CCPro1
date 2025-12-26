@@ -1,0 +1,38 @@
+# 操作系统文件
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 编辑器配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 临时文件
+*.log
+*.tmp
+*.bak
+
+# SSH 密钥（重要：不要提交私钥）
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+*.ppk
+
+# 环境配置
+.env
+.env.local
+.env.*.local
+
+# 备份文件
+backup/
+*.tar.gz
+*.zip
+
+# Node modules（如果以后需要）
+node_modules/
+package-lock.json
+yarn.lock
